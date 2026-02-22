@@ -1,0 +1,7 @@
+{
+  "name": "Nexus Sales System",
+  "description": "A professional-grade sales and inventory management system with AI-driven insights, real-time POS, and advanced analytics.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
