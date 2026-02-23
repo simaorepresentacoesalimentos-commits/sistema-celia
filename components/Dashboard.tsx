@@ -95,14 +95,27 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, financials, sellers }) =>
     const amountRemaining = Math.max(0, monthlyGoal - totalSoldMonth);
 
     // Inicializa o mapa com todos os vendedores ativos para garantir que apareçam no ranking
-    const sellerStatsMap: Record<string, number> = {};
+    const sellerStatsMap: Record<string, { sold: number, bruta: number, repasse: number, liquida: number }> = {};
     sellers.filter(s => s.status === 'Ativo').forEach(s => {
-      sellerStatsMap[s.nome] = 0;
+      sellerStatsMap[s.nome] = { sold: 0, bruta: 0, repasse: 0, liquida: 0 };
     });
 
     // Soma as vendas do mês atual
     orders.filter(o => o.data_pedido && o.data_pedido.startsWith(currentPeriod)).forEach(o => {
-      sellerStatsMap[o.vendedor] = (sellerStatsMap[o.vendedor] || 0) + Number(o.total_pedido || 0);
+      if (sellerStatsMap[o.vendedor]) {
+        sellerStatsMap[o.vendedor].sold += Number(o.total_pedido || 0);
+      }
+    });
+
+    // Soma as comissões do mês atual
+    financials.filter(f => f.data_vencimento && f.data_vencimento.startsWith(currentPeriod)).forEach(f => {
+      if (sellerStatsMap[f.vendedor]) {
+        const b = Number(f.comissao_valor || 0);
+        const r = Number(f.repasse_valor || 0);
+        sellerStatsMap[f.vendedor].bruta += b;
+        sellerStatsMap[f.vendedor].repasse += r;
+        sellerStatsMap[f.vendedor].liquida += (b - r);
+      }
     });
 
     return {
@@ -113,7 +126,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, financials, sellers }) =>
       prevMonth,
       currMonth,
       nextMonth,
-      sellersRanking: Object.entries(sellerStatsMap).sort((a, b) => b[1] - a[1])
+      sellersRanking: Object.entries(sellerStatsMap).sort((a, b) => b[1].sold - a[1].sold)
     };
   }, [orders, financials, sellers, sellerFilter, monthlyGoal, currentPeriod, prevPeriod, nextPeriod]);
 
@@ -141,8 +154,8 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, financials, sellers }) =>
         </div>
       </div>
 
-      {/* BLOCO SUPERIOR - RESUMO FINANCEIRO E METAS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* BLOCO SUPERIOR - RESUMO FINANCEIRO, METAS E PROJEÇÕES */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quadrado de Resumo (Estilo Imagem) */}
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col">
           <div className="mb-4 text-center">
@@ -229,7 +242,36 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, financials, sellers }) =>
             })()}
           </div>
           <div className="mt-4 pt-4 border-t border-slate-100 text-[9px] font-black text-slate-400 uppercase text-center tracking-tighter">
-            {stats.totalOrdersMonth} Pedidos Realizados • Clique no valor para editar
+            {stats.totalOrdersMonth} Pedidos Realizados
+          </div>
+        </div>
+
+        {/* Projeções Próximo Mês */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col">
+          <div className="mb-4 text-center">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-800 underline decoration-indigo-500 decoration-2 underline-offset-4">
+              Projeção {nextMonthName}
+            </h3>
+          </div>
+          
+          <div className="space-y-3 flex-1 flex flex-col justify-center">
+            <div className="flex items-center justify-between gap-4">
+              <div className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg font-bold text-[10px] min-w-[130px] text-center uppercase tracking-wider shadow-sm">Comissão Geral:</div>
+              <div className="text-indigo-600 font-bold text-sm">{formatCurrency(stats.nextMonth.bruta)}</div>
+            </div>
+            
+            <div className="flex items-center justify-between gap-4">
+              <div className="bg-rose-500 text-white px-4 py-1.5 rounded-lg font-bold text-[10px] min-w-[130px] text-center uppercase tracking-wider shadow-sm">Repasse:</div>
+              <div className="text-rose-500 font-bold text-sm">{formatCurrency(stats.nextMonth.repasse)}</div>
+            </div>
+            
+            <div className="flex items-center justify-between gap-4">
+              <div className="bg-emerald-500 text-white px-4 py-1.5 rounded-lg font-bold text-[10px] min-w-[130px] text-center uppercase tracking-wider shadow-sm">A receber Célia:</div>
+              <div className="text-emerald-500 font-bold text-sm">{formatCurrency(stats.nextMonth.liquida)}</div>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-slate-100 text-[9px] font-black text-slate-400 uppercase text-center tracking-tighter">
+            Saldo Projetado Líquido
           </div>
         </div>
       </div>
@@ -241,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, financials, sellers }) =>
           <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Performance Comercial</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.sellersRanking.map(([name, value], idx) => (
+          {stats.sellersRanking.map(([name, data], idx) => (
             <div key={idx} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-200 transition-all">
               <div className="flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black ${idx === 0 ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
@@ -249,44 +291,18 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, financials, sellers }) =>
                 </div>
                 <div>
                   <p className="text-xs font-black text-slate-800 uppercase truncate">{name}</p>
-                  <p className="text-lg font-black text-emerald-600">{formatCurrency(value)}</p>
+                  <div className="flex flex-col">
+                    <p className="text-lg font-black text-indigo-600 leading-tight">{formatCurrency(data.sold)}</p>
+                    <div className="flex flex-col mt-1">
+                      <p className="text-[9px] font-bold text-rose-500 uppercase tracking-tighter">Repasse: {formatCurrency(data.repasse)}</p>
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter">Líquido: {formatCurrency(data.liquida)}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <Star size={16} className={idx === 0 ? 'text-amber-400 fill-amber-400' : 'text-slate-100'} />
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* PROJEÇÕES PRÓXIMO MÊS */}
-      <div className="space-y-5">
-        <div className="flex items-center gap-2">
-          <ArrowUpRight size={20} className="text-indigo-600" />
-          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Projeções {nextMonthName}</h3>
-        </div>
-        
-        <div className="max-w-md">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-4">
-                <div className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg font-bold text-[10px] min-w-[140px] text-center uppercase tracking-wider shadow-sm">Comissão Geral:</div>
-                <div className="text-indigo-600 font-bold text-sm">{formatCurrency(stats.nextMonth.bruta)}</div>
-              </div>
-              
-              <div className="flex items-center justify-between gap-4">
-                <div className="bg-rose-500 text-white px-4 py-1.5 rounded-lg font-bold text-[10px] min-w-[140px] text-center uppercase tracking-wider shadow-sm">Repasse:</div>
-                <div className="text-rose-500 font-bold text-sm">{formatCurrency(stats.nextMonth.repasse)}</div>
-              </div>
-              
-              <div className="flex items-center justify-between gap-4">
-                <div className="bg-emerald-500 text-white px-4 py-1.5 rounded-lg font-bold text-[10px] min-w-[140px] text-center uppercase tracking-wider shadow-sm">A receber Célia:</div>
-                <div className="text-emerald-500 font-bold text-sm">{formatCurrency(stats.nextMonth.liquida)}</div>
-              </div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-slate-100 text-[9px] font-black text-slate-400 uppercase text-center tracking-tighter">
-              Saldo Projetado Líquido para {nextMonthName}
-            </div>
-          </div>
         </div>
       </div>
     </div>

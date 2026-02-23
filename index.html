@@ -8,19 +8,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Montserrat', 'sans-serif'],
+              sans: ['Inter', 'sans-serif'],
             },
             fontSize: {
-              'xxs': '0.625rem', // 10px
-              'xs': '0.75rem',    // 12px
-              'sm': '0.8125rem',  // 13px
-              'base': '0.875rem', // 14px
+              'xxs': '0.65rem',   // ~10.4px
+              'xs': '0.8rem',     // ~12.8px
+              'sm': '0.875rem',   // 14px
+              'base': '1rem',     // 16px
             }
           },
         },
@@ -28,17 +28,17 @@
     </script>
     <style>
       body {
-        font-family: 'Montserrat', sans-serif;
+        font-family: 'Inter', sans-serif;
         background-color: #f8fafc;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        font-size: 12px; /* Slightly smaller to match image */
+        font-size: 14px;
         color: #334155;
       }
       
       /* Typography adjustments to match the image */
       .text-label {
-        font-size: 9px;
+        font-size: 10px;
         color: #64748b;
         font-weight: 600;
         text-transform: uppercase;
@@ -47,7 +47,7 @@
       }
       
       .text-value {
-        font-size: 12px;
+        font-size: 14px;
         color: #0f172a;
         font-weight: 700;
         line-height: 1.4;
@@ -55,7 +55,7 @@
 
       /* Map font-black to bold to match the image's cleaner look */
       .font-black {
-        font-weight: 700 !important;
+        font-weight: 800 !important;
       }
 
       /* Global scrollbar for a cleaner look */
@@ -74,9 +74,9 @@
         background: #94a3b8;
       }
 
-      /* Force Montserrat on all elements to ensure consistency */
+      /* Force Inter on all elements to ensure consistency */
       * {
-        font-family: 'Montserrat', sans-serif !important;
+        font-family: 'Inter', sans-serif !important;
       }
     </style>
   <script type="importmap">

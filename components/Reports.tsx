@@ -389,12 +389,12 @@ const Reports: React.FC = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center no-print">
                 <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Base de Clientes ({filters.customerStatus} / {filters.vendedor || 'Todos Vendedores'})</h4>
-                <ActionButtons data={filteredCustomers} name="Clientes_Filtrados" />
+                <ActionButtons data={filteredCustomers.map(({ anotacoes, ...rest }) => rest)} name="Clientes_Filtrados" />
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[1200px]">
+                <table className="w-full text-left min-w-[1000px]">
                   <thead>
-                    <tr className="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
+                    <tr className="bg-slate-50 text-[11px] uppercase font-black text-slate-400">
                       <th className="px-4 py-3">Nome Fantasia</th>
                       <th className="px-4 py-3">CNPJ / CPF</th>
                       <th className="px-4 py-3">Cidade</th>
@@ -403,12 +403,11 @@ const Reports: React.FC = () => {
                       <th className="px-4 py-3">Vendedor</th>
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Última Compra</th>
-                      <th className="px-4 py-3">Anotações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredCustomers.sort((a,b) => a.name.localeCompare(b.name)).map(c => (
-                      <tr key={c.id} className="text-[10px] hover:bg-slate-50">
+                      <tr key={c.id} className="text-[11px] hover:bg-slate-50">
                         <td className="px-4 py-3 font-black text-slate-800 uppercase">{c.name}</td>
                         <td className="px-4 py-3 font-medium text-slate-500">{c.cnpj || '---'}</td>
                         <td className="px-4 py-3 font-medium text-slate-500 uppercase">{c.cidade}</td>
@@ -419,15 +418,14 @@ const Reports: React.FC = () => {
                         <td className="px-4 py-3 font-medium text-slate-500 uppercase">{c.contato}</td>
                         <td className="px-4 py-3 font-black text-indigo-500 uppercase">{c.vendedor}</td>
                         <td className="px-4 py-3">
-                          <span className={`font-black uppercase ${c.status === 'Ativo' ? 'text-emerald-600' : c.status === 'Inativo' ? 'text-rose-600' : 'text-amber-600'}`}>{c.status}</span>
+                           <span className={`font-black uppercase ${c.status === 'Ativo' ? 'text-emerald-600' : c.status === 'Inativo' ? 'text-rose-600' : 'text-amber-600'}`}>{c.status}</span>
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-500">{c.ultima_compra ? formatDateSafe(c.ultima_compra) : 'Sem registro'}</td>
-                        <td className="px-4 py-3 font-medium text-slate-400 italic max-w-xs truncate" title={c.anotacoes}>{c.anotacoes || '---'}</td>
                       </tr>
                     ))}
                     {filteredCustomers.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="py-20 text-center text-slate-400 font-black uppercase tracking-widest">Nenhum cliente encontrado com os filtros selecionados</td>
+                        <td colSpan={8} className="py-20 text-center text-slate-400 font-black uppercase tracking-widest">Nenhum cliente encontrado com os filtros selecionados</td>
                       </tr>
                     )}
                   </tbody>

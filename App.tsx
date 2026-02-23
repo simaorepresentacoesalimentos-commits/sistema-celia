@@ -266,15 +266,15 @@ const App: React.FC = () => {
                   ) : (
                     filteredCustomers.map(c => (
                       <tr key={c.id} className="hover:bg-slate-50/80 transition-colors group">
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-slate-800 text-sm uppercase">{c.name}</div>
-                          <div className="text-[9px] text-slate-400 font-medium uppercase tracking-widest">
+                        <td className="px-4 py-4">
+                          <div className="font-bold text-slate-800 text-[12px] uppercase">{c.name}</div>
+                          <div className="text-[12px] text-slate-400 font-bold uppercase tracking-widest">
                             {c.cnpj || 'Sem Documento'} {c.contato ? `• ${c.contato}` : ''}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-slate-500 font-medium text-xs uppercase">{c.cidade}</td>
-                        <td className="px-4 py-3"><span className="text-indigo-600 font-medium text-[9px] uppercase bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">{c.vendedor}</span></td>
-                        <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-md text-[8px] font-medium uppercase ${c.status === 'Ativo' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{c.status}</span></td>
+                        <td className="px-4 py-4 text-slate-500 font-bold text-[12px] uppercase">{c.cidade}</td>
+                        <td className="px-4 py-4"><span className="text-indigo-600 font-bold text-[12px] uppercase bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">{c.vendedor}</span></td>
+                        <td className="px-4 py-4"><span className={`px-3 py-1 rounded-lg text-[12px] font-bold uppercase ${c.status === 'Ativo' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{c.status}</span></td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => handleOpenModal(c)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"><Edit2 size={14}/></button>
@@ -341,10 +341,10 @@ const App: React.FC = () => {
                   ) : (
                     filteredSales.map(o => (
                       <tr key={o.id} className="hover:bg-slate-50/80 transition-colors group">
-                        <td className="px-4 py-3 font-medium text-[11px] uppercase tracking-wider text-slate-500">{formatDateSafe(o.data_pedido)}</td>
-                        <td className="px-4 py-3 font-medium text-[11px] uppercase tracking-wider text-slate-800">{o.cliente_nome || 'Consumidor'}</td>
-                        <td className="px-4 py-3 font-medium text-[11px] uppercase tracking-wider text-indigo-600">{o.vendedor}</td>
-                        <td className="px-4 py-3 font-medium text-[11px] uppercase tracking-wider text-slate-900">R$ {o.total_pedido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td className="px-4 py-4 font-bold text-xs uppercase tracking-wider text-slate-500">{formatDateSafe(o.data_pedido)}</td>
+                        <td className="px-4 py-4 font-bold text-xs uppercase tracking-wider text-slate-800">{o.cliente_nome || 'Consumidor'}</td>
+                        <td className="px-4 py-4 font-bold text-xs uppercase tracking-wider text-indigo-600">{o.vendedor}</td>
+                        <td className="px-4 py-4 font-bold text-xs uppercase tracking-wider text-slate-900">R$ {o.total_pedido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => { setEditingOrder(o); setCurrentView('new_sale'); }} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"><Edit2 size={14}/></button>

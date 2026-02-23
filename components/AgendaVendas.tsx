@@ -296,7 +296,7 @@ const AgendaVendasComponent: React.FC = () => {
                 <th className="px-5 py-3 text-right">Ação</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-xs">
+            <tbody className="divide-y divide-slate-100 font-bold text-sm">
               {filteredItems.length === 0 && !loading && (
                 <tr>
                   <td colSpan={5} className="py-16 text-center">
@@ -321,38 +321,38 @@ const AgendaVendasComponent: React.FC = () => {
                 
                 return (
                   <tr key={item.id} className={`transition-all hover:bg-slate-50/50 ${isDue ? 'flashing-alert group' : (isPending ? 'bg-white group' : 'bg-white opacity-60')}`}>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         {isDue && <BellRing size={16} className="text-rose-500 animate-bounce shrink-0" />}
                         <div>
-                          <div className="font-bold text-slate-800 text-sm uppercase leading-none mb-1">{item.cliente}</div>
-                          <div className="text-[8px] font-medium text-slate-400 uppercase tracking-widest">CNPJ: {item.cnpj || '---'}</div>
+                          <div className="font-bold text-slate-800 text-base uppercase leading-none mb-1">{item.cliente}</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CNPJ: {item.cnpj || '---'}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                          <Contact size={10} className="text-indigo-500" /> {item.contato || '---'}
+                    <td className="px-5 py-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                          <Contact size={12} className="text-indigo-500" /> {item.contato || '---'}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-600">
-                          <Phone size={10} /> {item.telefone || '---'}
+                        <div className="flex items-center gap-1.5 text-xs font-black text-indigo-600">
+                          <Phone size={12} /> {item.telefone || '---'}
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3">
-                      <div className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">
+                    <td className="px-5 py-4">
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
                         {item.ultima_compra ? formatDateSafe(item.ultima_compra) : '---'}
                       </div>
                     </td>
-                    <td className="px-5 py-3">
-                      <div className="bg-white/80 p-1.5 rounded-lg border border-slate-100 flex flex-col gap-0.5 w-fit shadow-sm">
-                        <div className={`flex items-center gap-1.5 text-xs font-bold ${isDue ? 'text-rose-600' : 'text-slate-800'}`}>
-                          <Calendar size={12} className={isDue ? 'text-rose-500' : 'text-slate-400'} /> {formatDateSafe(item.data_retorno)}
+                    <td className="px-5 py-4">
+                      <div className="bg-white/80 p-2 rounded-lg border border-slate-100 flex flex-col gap-1 w-fit shadow-sm">
+                        <div className={`flex items-center gap-1.5 text-sm font-black ${isDue ? 'text-rose-600' : 'text-slate-800'}`}>
+                          <Calendar size={14} className={isDue ? 'text-rose-500' : 'text-slate-400'} /> {formatDateSafe(item.data_retorno)}
                         </div>
                         {item.hora_retorno && (
-                          <div className={`flex items-center gap-1.5 text-[8px] font-bold uppercase ${isDue ? 'text-rose-400' : 'text-slate-500'}`}>
-                            <Clock size={10} /> {item.hora_retorno}h
+                          <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase ${isDue ? 'text-rose-400' : 'text-slate-500'}`}>
+                            <Clock size={12} /> {item.hora_retorno}h
                           </div>
                         )}
                       </div>
