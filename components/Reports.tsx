@@ -136,7 +136,7 @@ const Reports: React.FC = () => {
     .sort((a, b) => (a.data_pagamento || '').localeCompare(b.data_pagamento || ''));
 
   const filteredCustomers = customers.filter(c => {
-    const statusMatch = filters.customerStatus === 'todos' || (c.status || '').toLowerCase() === filters.customerStatus.toLowerCase();
+    const statusMatch = filters.customerStatus === 'todos' || (c.status || '').toLowerCase().includes(filters.customerStatus.toLowerCase());
     const sellerMatch = !filters.vendedor || (c.vendedor || '').toLowerCase() === filters.vendedor.toLowerCase();
     return statusMatch && sellerMatch;
   });
@@ -200,16 +200,13 @@ const Reports: React.FC = () => {
           <>
             <div className="flex-1 min-w-[180px]">
               <label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Filtrar por Status</label>
-              <select 
-                className="w-full bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2 font-black text-indigo-600 outline-none uppercase text-[10px]"
-                value={filters.customerStatus}
-                onChange={e => setFilters({...filters, customerStatus: e.target.value})}
-              >
-                <option value="todos">Todos os Status</option>
-                <option value="Ativo">Apenas Ativos</option>
-                <option value="Inativo">Apenas Inativos</option>
-                <option value="Prospecção">Apenas Prospecção</option>
-              </select>
+              <input 
+                type="text"
+                placeholder="BUSCAR STATUS..."
+                className="w-full bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2 font-black text-indigo-600 outline-none uppercase text-[10px] placeholder:text-indigo-300"
+                value={filters.customerStatus === 'todos' ? '' : filters.customerStatus}
+                onChange={e => setFilters({...filters, customerStatus: e.target.value || 'todos'})}
+              />
             </div>
             <div className="flex-1 min-w-[180px]">
               <label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Vendedor</label>
@@ -418,7 +415,7 @@ const Reports: React.FC = () => {
                         <td className="px-4 py-3 font-medium text-slate-500 uppercase">{c.contato}</td>
                         <td className="px-4 py-3 font-black text-indigo-500 uppercase">{c.vendedor}</td>
                         <td className="px-4 py-3">
-                           <span className={`font-black uppercase ${c.status === 'Ativo' ? 'text-emerald-600' : c.status === 'Inativo' ? 'text-rose-600' : 'text-amber-600'}`}>{c.status}</span>
+                           <span className={`font-black uppercase ${c.status === 'Ativo' ? 'text-emerald-600' : c.status === 'Inativo' ? 'text-rose-600' : 'text-slate-500'}`}>{c.status}</span>
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-500">{c.ultima_compra ? formatDateSafe(c.ultima_compra) : 'Sem registro'}</td>
                       </tr>
