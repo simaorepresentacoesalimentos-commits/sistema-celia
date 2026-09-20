@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fichário de Ligações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EFE9DC;
+    --paper-raised: #F8F4EA;
+    --ink: #23302B;
+    --ink-soft: #5B6660;
+    --accent: #4B6C5D;
+    --accent-ink: #F8F4EA;
+    --line: #C9C0AC;
+    --line-soft: #DCD5C4;
+    --danger: #9A4A3C;
+    --danger-ink: #F8F4EA;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #1B211D;
+      --paper-raised: #232B25;
+      --ink: #E9E4D6;
+      --ink-soft: #A6A99C;
+      --accent: #7FA491;
+      --accent-ink: #1B211D;
+      --line: #3B453C;
+      --line-soft: #2B332C;
+      --danger: #C97C6C;
+      --danger-ink: #1B211D;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1B211D;
+    --paper-raised: #232B25;
+    --ink: #E9E4D6;
+    --ink-soft: #A6A99C;
+    --accent: #7FA491;
+    --accent-ink: #1B211D;
+    --line: #3B453C;
+    --line-soft: #2B332C;
+    --danger: #C97C6C;
+    --danger-ink: #1B211D;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body { min-height: 100vh; }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  header.top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 30px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .count-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  /* --- Formulário --- */
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 32px;
+  }
+
+  .card h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 17px;
+    margin: 0 0 16px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+  }
+
+  input[type="text"], input[type="tel"], textarea {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 14px;
+  }
+  textarea { resize: vertical; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .form-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  button {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 3px;
+    padding: 9px 16px;
+    cursor: pointer;
+  }
+
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--ink-soft); color: var(--ink); }
+  .btn-danger-text { background: transparent; color: var(--danger); padding: 4px 8px; font-size: 12px; }
+  .btn-danger-text:hover { text-decoration: underline; }
+  .btn-edit-text { background: transparent; color: var(--accent); padding: 4px 8px; font-size: 12px; }
+  .btn-edit-text:hover { text-decoration: underline; }
+
+  /* --- Barra de ação --- */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-soft); }
+
+  /* --- Lista --- */
+  .list {
+    border-top: 2px solid var(--ink);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 24px 1.4fr 1.1fr 1fr 1fr 0.9fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 14px;
+  }
+  .row.head {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+  }
+  .row .mono { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+  .row .actions { display: flex; gap: 2px; justify-content: flex-end; }
+  .empty {
+    padding: 40px 10px;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  .row input[type="text"], .row input[type="tel"] {
+    padding: 5px 7px;
+    font-size: 13px;
+  }
+
+  input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+  }
+
+  footer.bottom {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* ============ IMPRESSÃO ============ */
+  .print-report { display: none; }
+
+  @media print {
+    body { background: #fff; }
+    .app-screen { display: none !important; }
+    .print-report { display: block; }
+
+    .p-title {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 20px;
+      font-weight: 600;
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .p-date { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #333; }
+
+    .p-client {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      border-bottom: 1px solid #999;
+      padding: 8px 0;
+    }
+    .p-client:first-of-type { padding-top: 8px; }
+
+    .p-name {
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      margin-bottom: 3px;
+    }
+    .p-meta {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 18px;
+      row-gap: 2px;
+      font-size: 11px;
+      color: #222;
+      white-space: nowrap;
+      margin-bottom: 5px;
+    }
+    .p-meta b {
+      font-size: 8.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #666;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .p-meta .mono { font-family: 'IBM Plex Mono', monospace; }
+
+    .p-produtos-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #555;
+      margin-bottom: 3px;
+    }
+    .p-produtos-text {
+      font-size: 12.5px;
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+    .p-produtos-blank {
+      border: 1px solid #bbb;
+      border-radius: 2px;
+      padding: 4px 10px;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 19px,
+        #ccc 19px,
+        #ccc 20px
+      );
+      height: 42px;
+    }
+
+    @page { margin: 16mm 14mm; }
+  }
+
+  /* ===== Ajustes solicitados: visual de sistema + fonte 12px ===== */
+  html, body, input, textarea, select, button { font-size: 12px !important; }
+  body { background: #d7dce2; }
+  .wrap {
+    max-width: 1180px;
+    padding: 18px 18px 50px;
+    background: #eef1f4;
+    min-height: 100vh;
+    border-left: 1px solid #aeb6bf;
+    border-right: 1px solid #aeb6bf;
+  }
+  header.top {
+    background: #365f91;
+    color: #fff;
+    margin: -18px -18px 18px;
+    padding: 12px 16px;
+    border-bottom: 3px solid #24466c;
+    align-items: center;
+  }
+  header.top h1 { font-family: 'Segoe UI', sans-serif; font-size: 18px !important; letter-spacing: 0; }
+  header.top .sub, header.top .count-badge { color: #eef5ff; font-size: 12px !important; }
+  .card {
+    background: #fff;
+    border: 1px solid #9da8b3;
+    border-radius: 0;
+    padding: 14px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
+  }
+  .card h2 { font-family: 'Segoe UI', sans-serif; font-size: 13px !important; }
+  input[type="text"], input[type="tel"], textarea, select {
+    background: #fff;
+    border: 1px solid #8e99a5;
+    border-radius: 0;
+    font-size: 12px !important;
+    padding: 6px 7px;
+  }
+  button {
+    border-radius: 2px;
+    font-size: 12px !important;
+    padding: 7px 11px;
+  }
+  .btn-primary { background: #365f91; color: #fff; border: 1px solid #24466c; }
+  .btn-ghost { background: #f4f5f6; color: #253342; border: 1px solid #9da8b3; }
+  .toolbar {
+    background: #dde4eb;
+    border: 1px solid #9da8b3;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+  .toolbar-right { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+  .list { background:#fff; border:1px solid #9da8b3; border-top:3px solid #365f91; }
+  .row { font-size:12px !important; padding:8px 5px; grid-template-columns: 24px 1.35fr 1.05fr 1fr .9fr .8fr .65fr auto; }
+  .row.head { background:#dfe7ef; color:#263b51; font-size:12px !important; font-weight:600; text-transform:none; letter-spacing:0; }
+  .row .mono, .count-badge, .toolbar-left { font-size:12px !important; }
+  .status-badge { display:inline-block; padding:2px 6px; border:1px solid #9da8b3; background:#f3f5f7; white-space:nowrap; }
+  .print-controls {
+    display:flex; gap:7px; flex-wrap:wrap; align-items:center;
+    background:#fff; border:1px solid #9da8b3; padding:8px; margin-bottom:8px;
+  }
+  .print-controls select { min-width:135px; }
+  .backup-note { color:#56616c; }
+  @media (max-width: 850px) {
+    .row { grid-template-columns: 24px 1.4fr 1fr 1fr auto; }
+    .row > :nth-child(5), .row > :nth-child(6), .row > :nth-child(7) { display:none; }
+  }
+
+  /* Títulos e cabeçalhos em MAIÚSCULO */
+  h1, h2, label, .row.head, .p-title, .p-produtos-label,
+  .print-controls strong, button {
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-screen">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <h1>Fichário de Ligações</h1>
+        <div class="sub">Cadastre os clientes e gere o relatório para imprimir e usar no dia a dia · seus dados ficam salvos automaticamente neste app</div>
+      </div>
+      <div class="count-badge" id="countBadge">0 clientes</div>
+    </header>
+
+    <section class="card">
+      <h2 id="formTitle">Novo cliente</h2>
+      <div class="form-grid">
+        <div>
+          <label for="f-cliente">Cliente</label>
+          <input type="text" id="f-cliente" placeholder="Nome da empresa">
+        </div>
+        <div>
+          <label for="f-cnpj">CNPJ</label>
+          <input type="text" id="f-cnpj" placeholder="00.000.000/0000-00">
+        </div>
+        <div>
+          <label for="f-telefone">Telefone</label>
+          <input type="tel" id="f-telefone" placeholder="(00) 00000-0000">
+        </div>
+        <div>
+          <label for="f-contato">Contato</label>
+          <input type="text" id="f-contato" placeholder="Nome de quem atende">
+        </div>
+        <div>
+          <label for="f-cidade">Cidade</label>
+          <input type="text" id="f-cidade" placeholder="Cidade / UF">
+        </div>
+        <div>
+          <label for="f-status">Status</label>
+          <select id="f-status">
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+        <div style="grid-column: 1 / -1;">
+          <label for="f-produtos">Produtos que compra (o que você já sabe)</label>
+          <textarea id="f-produtos" rows="3" placeholder="Ex: Óleo vegetal 14,5kg, Queijo mussarela 4kg, Farinha de trigo 5x..."></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-ghost" id="cancelEditBtn" style="display:none;">Cancelar</button>
+        <button class="btn-primary" id="saveBtn">Adicionar cliente</button>
+      </div>
+    </section>
+
+    <div class="print-controls">
+      <strong>Impressão:</strong>
+      <select id="statusFilter" title="Status a imprimir">
+        <option value="todos">Todos os status</option>
+        <option value="Ativo">Somente ativos</option>
+        <option value="Inativo">Somente inativos</option>
+      </select>
+      <select id="printedFilter" title="Controle de impressão">
+        <option value="todos">Todos</option>
+        <option value="nao">Ainda não impressos</option>
+        <option value="sim">Já impressos</option>
+      </select>
+      <span class="backup-note">A seleção manual continua funcionando normalmente.</span>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input type="checkbox" id="selectAll">
+        <span id="selCount">Selecionar todos</span>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn-ghost" id="backupBtn">Fazer backup</button>
+        <button class="btn-ghost" id="restoreBtn">Restaurar backup</button>
+        <input type="file" id="restoreFile" accept=".json,application/json" style="display:none;">
+        <button class="btn-primary" id="printBtn">Gerar relatório para impressão</button>
+      </div>
+    </div>
+
+    <div class="list" id="list">
+      <div class="row head">
+        <span></span>
+        <span>Cliente</span>
+        <span>CNPJ</span>
+        <span>Telefone</span>
+        <span>Contato</span>
+        <span>Cidade</span>
+        <span>Status</span>
+        <span></span>
+      </div>
+      <div id="rows"></div>
+      <div class="empty" id="emptyState">Nenhum cliente cadastrado ainda. Use o formulário acima para adicionar o primeiro.</div>
+    </div>
+  </div>
+</div>
+
+<div class="print-report" id="printReport">
+  <div class="p-title">
+    <span>Relatório de Ligações</span>
+    <span class="p-date" id="printDate"></span>
+  </div>
+  <div id="printList"></div>
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'fichario-ligacoes:clientes';
+  let clients = [];
+  let editingId = null;
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    clients = raw ? JSON.parse(raw) : [];
+    clients = Array.isArray(clients) ? clients.map(c => Object.assign({ status: 'Ativo', printed: false, lastPrinted: '' }, c)) : [];
+  } catch (e) {
+    clients = [];
+  }
+
+  const rowsEl = document.getElementById('rows');
+  const emptyEl = document.getElementById('emptyState');
+  const countBadge = document.getElementById('countBadge');
+  const selCountEl = document.getElementById('selCount');
+  const selectAllEl = document.getElementById('selectAll');
+
+  const fCliente = document.getElementById('f-cliente');
+  const fCnpj = document.getElementById('f-cnpj');
+  const fTelefone = document.getElementById('f-telefone');
+  const fContato = document.getElementById('f-contato');
+  const fCidade = document.getElementById('f-cidade');
+  const fProdutos = document.getElementById('f-produtos');
+  const fStatus = document.getElementById('f-status');
+  const saveBtn = document.getElementById('saveBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  const formTitle = document.getElementById('formTitle');
+
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(clients)); } catch (e) {}
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  function render() {
+    rowsEl.innerHTML = '';
+    emptyEl.style.display = clients.length ? 'none' : 'block';
+    countBadge.textContent = clients.length + (clients.length === 1 ? ' cliente' : ' clientes');
+
+    clients.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <input type="checkbox" class="pick" data-id="${c.id}" ${c.selected ? 'checked' : ''}>
+        <span>
+          <div>${esc(c.cliente) || '—'}</div>
+          ${c.produtos ? `<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">${esc(c.produtos.split('\n')[0]).slice(0,48)}${c.produtos.length > 48 ? '…' : ''}</div>` : ''}
+        </span>
+        <span class="mono">${esc(c.cnpj) || '—'}</span>
+        <span class="mono">${esc(c.telefone) || '—'}</span>
+        <span>${esc(c.contato) || '—'}</span>
+        <span>${esc(c.cidade) || '—'}</span>
+        <span><span class="status-badge">${esc(c.status || 'Ativo')}</span></span>
+        <span class="actions">
+          <button class="btn-edit-text" data-edit="${c.id}">Editar</button>
+          <button class="btn-danger-text" data-del="${c.id}">Remover</button>
+        </span>
+      `;
+      rowsEl.appendChild(row);
+    });
+
+    rowsEl.querySelectorAll('.pick').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const c = clients.find(x => x.id === cb.dataset.id);
+        if (c) c.selected = cb.checked;
+        persist();
+        updateSelCount();
+      });
+    });
+    rowsEl.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => startEdit(btn.dataset.edit));
+    });
+    rowsEl.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        clients = clients.filter(c => c.id !== btn.dataset.del);
+        persist();
+        render();
+      });
+    });
+
+    updateSelCount();
+  }
+
+  function updateSelCount() {
+    const n = clients.filter(c => c.selected).length;
+    selCountEl.textContent = n > 0 ? (n + ' selecionado' + (n > 1 ? 's' : '')) : 'Selecionar todos';
+    selectAllEl.checked = clients.length > 0 && n === clients.length;
+  }
+
+  selectAllEl.addEventListener('change', () => {
+    clients.forEach(c => c.selected = selectAllEl.checked);
+    persist();
+    render();
+  });
+
+  function clearForm() {
+    fCliente.value = ''; fCnpj.value = ''; fTelefone.value = ''; fContato.value = ''; fCidade.value = ''; fProdutos.value = ''; fStatus.value = 'Ativo';
+    editingId = null;
+    formTitle.textContent = 'Novo cliente';
+    saveBtn.textContent = 'Adicionar cliente';
+    cancelEditBtn.style.display = 'none';
+  }
+
+  function startEdit(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    editingId = id;
+    fCliente.value = c.cliente || '';
+    fCnpj.value = c.cnpj || '';
+    fTelefone.value = c.telefone || '';
+    fContato.value = c.contato || '';
+    fCidade.value = c.cidade || '';
+    fProdutos.value = c.produtos || '';
+    fStatus.value = c.status || 'Ativo';
+    formTitle.textContent = 'Editar cliente';
+    saveBtn.textContent = 'Salvar alterações';
+    cancelEditBtn.style.display = 'inline-block';
+    fCliente.focus();
+  }
+
+  cancelEditBtn.addEventListener('click', clearForm);
+
+  function normalizeDoc(s) {
+    return (s || '').replace(/\D/g, '');
+  }
+
+  function findDuplicate(data) {
+    const cnpjNorm = normalizeDoc(data.cnpj);
+    if (cnpjNorm) {
+      const byCnpj = clients.find(c => c.id !== editingId && normalizeDoc(c.cnpj) === cnpjNorm);
+      if (byCnpj) return byCnpj;
+    }
+    const nomeNorm = (data.cliente || '').trim().toLowerCase();
+    if (nomeNorm) {
+      const byNome = clients.find(c => c.id !== editingId && (c.cliente || '').trim().toLowerCase() === nomeNorm);
+      if (byNome) return byNome;
+    }
+    return null;
+  }
+
+  saveBtn.addEventListener('click', () => {
+    const data = {
+      cliente: fCliente.value.trim(),
+      cnpj: fCnpj.value.trim(),
+      telefone: fTelefone.value.trim(),
+      contato: fContato.value.trim(),
+      cidade: fCidade.value.trim(),
+      produtos: fProdutos.value.trim(),
+      status: fStatus.value || 'Ativo',
+    };
+    if (!data.cliente) {
+      fCliente.focus();
+      return;
+    }
+    const dup = findDuplicate(data);
+    if (dup) {
+      const usarExistente = confirm(
+        'Já existe um cliente cadastrado com esse ' + (normalizeDoc(data.cnpj) ? 'CNPJ' : 'nome') +
+        ': "' + dup.cliente + '".\n\nClique OK para abrir esse cadastro e atualizar os dados, ou Cancelar para revisar o que você digitou.'
+      );
+      if (usarExistente) {
+        startEdit(dup.id);
+      } else {
+        fCliente.focus();
+      }
+      return;
+    }
+    if (editingId) {
+      const c = clients.find(x => x.id === editingId);
+      Object.assign(c, data);
+    } else {
+      clients.push(Object.assign({ id: 'c' + Date.now() + Math.random().toString(36).slice(2, 7), selected: true, printed: false, lastPrinted: '' }, data));
+    }
+    persist();
+    clearForm();
+    render();
+  });
+
+  function getPrintList() {
+    const status = document.getElementById('statusFilter').value;
+    const printed = document.getElementById('printedFilter').value;
+    const manuallySelected = clients.filter(c => c.selected);
+    let list = manuallySelected.length ? manuallySelected.slice() : clients.slice();
+
+    if (status !== 'todos') list = list.filter(c => (c.status || 'Ativo') === status);
+    if (printed === 'nao') list = list.filter(c => !c.printed);
+    if (printed === 'sim') list = list.filter(c => !!c.printed);
+
+    // Evita CNPJ repetido na mesma impressão. Sem CNPJ, usa o ID para não apagar clientes diferentes.
+    const seen = new Set();
+    return list.filter(c => {
+      const doc = normalizeDoc(c.cnpj);
+      const key = doc ? 'cnpj:' + doc : 'id:' + c.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function buildPrintReport(list) {
+    const printList = document.getElementById('printList');
+    const printDate = document.getElementById('printDate');
+    printDate.textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    printList.innerHTML = list.map(c => `
+      <div class="p-client">
+        <div class="p-name">${esc(c.cliente) || '—'}</div>
+        <div class="p-meta">
+          <span><b>CNPJ</b><span class="mono">${esc(c.cnpj) || '—'}</span></span>
+          <span><b>Telefone</b><span class="mono">${esc(c.telefone) || '—'}</span></span>
+          <span><b>Contato</b>${esc(c.contato) || '—'}</span>
+          <span><b>Cidade</b>${esc(c.cidade) || '—'}</span>
+          <span><b>Status</b>${esc(c.status || 'Ativo')}</span>
+        </div>
+        <div class="p-produtos-label">Produtos que compra</div>
+        ${c.produtos ? `<div class="p-produtos-text">${esc(c.produtos).replace(/\n/g, '<br>')}</div>` : ''}
+        <div class="p-produtos-blank"></div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('printBtn').addEventListener('click', () => {
+    const list = getPrintList();
+    if (!list.length) {
+      alert('Nenhum cliente encontrado para os filtros escolhidos.');
+      return;
+    }
+
+    const jaImpressos = list.filter(c => !!c.printed);
+    if (jaImpressos.length > 0) {
+      const novamente = confirm(
+        'ESSA LISTA CONTÉM CLIENTES QUE JÁ FORAM IMPRESSOS ANTERIORMENTE.\n\n' +
+        'DESEJA IMPRIMIR NOVAMENTE ESSA LISTA?\n\n' +
+        'OK = SIM   |   CANCELAR = NÃO'
+      );
+      if (!novamente) return;
+    }
+
+    buildPrintReport(list);
+    const stamp = new Date().toISOString();
+    list.forEach(item => {
+      const c = clients.find(x => x.id === item.id);
+      if (c) { c.printed = true; c.lastPrinted = stamp; }
+    });
+    persist();
+    window.print();
+  });
+
+  document.getElementById('backupBtn').addEventListener('click', () => {
+    const payload = {
+      app: 'Fichário de Ligações',
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      clients: clients
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const hoje = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'backup-fichario-ligacoes-' + hoje + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  const restoreFile = document.getElementById('restoreFile');
+  document.getElementById('restoreBtn').addEventListener('click', () => restoreFile.click());
+  restoreFile.addEventListener('change', () => {
+    const file = restoreFile.files && restoreFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        const imported = Array.isArray(data) ? data : data.clients;
+        if (!Array.isArray(imported)) throw new Error('Formato inválido');
+        if (!confirm('Restaurar este backup substituirá os clientes que estão no fichário agora. Deseja continuar?')) {
+          restoreFile.value = '';
+          return;
+        }
+        clients = imported.map(c => Object.assign({ status: 'Ativo', printed: false, lastPrinted: '' }, c));
+        persist();
+        clearForm();
+        render();
+        alert('Backup restaurado com sucesso.');
+      } catch (e) {
+        alert('Não foi possível restaurar este arquivo de backup.');
+      }
+      restoreFile.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
