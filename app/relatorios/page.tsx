@@ -5,7 +5,6 @@ import { calcComissaoPedido, calcRepassePedido } from "@/lib/financeiro";
 import { Download } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { baixarXlsx } from "@/lib/xlsx";
 
 const RELATORIOS = [
   { key: "cadastro", label: "Cadastro de clientes" },
@@ -23,17 +22,6 @@ const RELATORIOS_FINANCEIRO = ["vendas", "financeiro"];
 // Relatórios de clientes que têm o filtro "Impressão" (controle salvo no banco,
 // na tabela clientes_impressos — não altera o cadastro do cliente).
 const RELATORIOS_IMPRESSAO = ["ativos", "inativos", "cidade"];
-
-// Restauração de backup: tabelas na ordem que respeita as chaves estrangeiras.
-const TABELAS_RESTAURACAO = [
-  "vendedores", "clientes", "vendedor_cliente_status", "pedidos", "pedido_itens",
-  "pedido_boletos", "devolucoes", "agenda", "rascunhos", "metas_mensais", "clientes_impressos",
-];
-// Colunas calculadas pelo banco (não podem ser gravadas): valor_total = quantidade x valor unitário.
-const COLUNAS_GERADAS: Record<string, string[]> = {
-  pedido_itens: ["valor_total"],
-  devolucoes: ["valor_total"],
-};
 
 function downloadCsv(filename: string, rows: any[]) {
   if (!rows.length) { alert("Sem dados para exportar."); return; }
@@ -84,9 +72,6 @@ export default function RelatoriosPage() {
   // dos clientes na mesma ordem das linhas exibidas (usado para marcar ao imprimir).
   const [impressaoFiltro, setImpressaoFiltro] = useState<"todos" | "nao" | "sim">("todos");
   const [idsResultado, setIdsResultado] = useState<string[]>([]);
-  // Fechamento do relatório "Vendas do período" (totais por unidade e valor).
-  const [restaurando, setRestaurando] = useState(false);
-  const [totaisVendas, setTotaisVendas] = useState<{ kg: number; un: number; valor: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -102,7 +87,6 @@ export default function RelatoriosPage() {
   }, []);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const fmtNum = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
   const fmtData = (d: string | null | undefined) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR") : "-";
   const fmtDataCurta = (d: string | null | undefined) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "-";
 
@@ -197,136 +181,13 @@ export default function RelatoriosPage() {
         const liquido = +(comissaoFinal - repasseFinal).toFixed(2);
 
         setResumoFinanceiro({ totalVendido: totalVendidoFinal, comissaoTotal: comissaoFinal, repasseTotal: repasseFinal, liquido, devolucoesAbatidas: +devValor.toFixed(2) });
-
-        // ── Detalhamento venda por venda ────────────────────────────────────
-        // Mesmos filtros e mesmas regras dos totais acima: à vista/PIX entra pela
-        // data de entrega; cada parcela de boleto entra pelo seu vencimento
-        // (comissão/repasse proporcionais ao valor da parcela); devoluções pela
-        // data da devolução. Só detalha de onde vêm os valores dos cards.
-        let pixDetQuery = supabase
-          .from("pedidos")
-          .select("id, data_pedido, data_entrega, valor_total, comissao_percentual, repasse_percentual, repasse_para, comissao_manual, vendedor_id, clientes(nome_fantasia, razao_social), vendedores(nome)")
-          .eq("forma_pagamento", "pix")
-          .gte("data_entrega", dataInicio)
-          .lte("data_entrega", dataFim);
-        if (vendedorFiltro) pixDetQuery = pixDetQuery.eq("vendedor_id", vendedorFiltro);
-
-        let boletoDetQuery = supabase
-          .from("pedido_boletos")
-          .select("numero_parcela, valor, data_vencimento, pedidos!inner(id, data_pedido, data_entrega, qtd_parcelas, valor_total, comissao_percentual, repasse_percentual, repasse_para, comissao_manual, vendedor_id, clientes(nome_fantasia, razao_social), vendedores(nome))")
-          .gte("data_vencimento", dataInicio)
-          .lte("data_vencimento", dataFim);
-        if (vendedorFiltro) boletoDetQuery = boletoDetQuery.eq("pedidos.vendedor_id", vendedorFiltro);
-
-        let devDetQuery = supabase
-          .from("devolucoes")
-          .select("data_devolucao, valor_total, comissao_percentual, repasse_percentual, vendedor_id, clientes(nome_fantasia, razao_social), vendedores(nome), pedidos!inner(id, data_pedido, data_entrega, repasse_para)")
-          .gte("data_devolucao", dataInicio)
-          .lte("data_devolucao", dataFim);
-        if (vendedorFiltro) devDetQuery = devDetQuery.eq("vendedor_id", vendedorFiltro);
-
-        const [{ data: pixDet, error: erroPixDet }, { data: bolDet, error: erroBolDet }, { data: devDet, error: erroDevDet }] =
-          await Promise.all([pixDetQuery, boletoDetQuery, devDetQuery]);
-        const erroDet = erroPixDet || erroBolDet || erroDevDet;
-        if (erroDet) {
-          setResultado([]);
-          setTituloResultado(`Erro ao montar o detalhamento: ${erroDet.message}`);
-          return;
-        }
-
-        const fmtPct = (n: number) => `${n.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
-        // % efetivo de comissão do pedido (se houve comissão manual em R$, mostra o % equivalente)
-        const pctComissaoPedido = (ped: any) => {
-          const vt = Number(ped.valor_total) || 0;
-          if (ped.comissao_manual !== null && ped.comissao_manual !== undefined && vt > 0) return (Number(ped.comissao_manual) / vt) * 100;
-          return Number(ped.comissao_percentual) || 0;
-        };
-        const nomeDe = (o: any) => o?.clientes?.nome_fantasia || o?.clientes?.razao_social || "-";
-        const linhasFin: { sortKey: string; row: any }[] = [];
-
-        for (const p of (pixDet ?? []) as any[]) {
-          const vt = Number(p.valor_total);
-          const com = calcComissaoPedido(vt, Number(p.comissao_percentual), p.comissao_manual);
-          const rep = calcRepassePedido(vt, Number(p.repasse_percentual));
-          linhasFin.push({
-            sortKey: `${p.data_entrega}|${nomeDe(p)}`,
-            row: {
-              "Data do pedido": fmtData(p.data_pedido),
-              "Data de entrega": fmtData(p.data_entrega),
-              "Cliente": nomeDe(p),
-              "Vendedor": p.vendedores?.nome || "-",
-              "Forma de pagamento": "PIX / À vista",
-              "Vencimento do boleto": "-",
-              "Valor da venda": fmt(vt),
-              "Comissão %": fmtPct(pctComissaoPedido(p)),
-              "Valor da comissão": fmt(com),
-              "Repasse %": fmtPct(Number(p.repasse_percentual) || 0),
-              "Repasse para": p.repasse_para || "-",
-              "Valor do repasse": fmt(rep),
-              "Líquido": fmt(com - rep),
-            },
-          });
-        }
-
-        for (const b of (bolDet ?? []) as any[]) {
-          const ped = b.pedidos;
-          if (!ped) continue;
-          const vt = Number(ped.valor_total);
-          const valorParcela = Number(b.valor);
-          const proporcao = valorParcela / Number(ped.valor_total || 1);
-          const com = calcComissaoPedido(vt, Number(ped.comissao_percentual), ped.comissao_manual) * proporcao;
-          const rep = calcRepassePedido(vt, Number(ped.repasse_percentual)) * proporcao;
-          linhasFin.push({
-            sortKey: `${b.data_vencimento}|${nomeDe(ped)}`,
-            row: {
-              "Data do pedido": fmtData(ped.data_pedido),
-              "Data de entrega": fmtData(ped.data_entrega),
-              "Cliente": nomeDe(ped),
-              "Vendedor": ped.vendedores?.nome || "-",
-              "Forma de pagamento": ped.qtd_parcelas ? `Boleto ${b.numero_parcela}/${ped.qtd_parcelas}` : `Boleto parcela ${b.numero_parcela}`,
-              "Vencimento do boleto": fmtData(b.data_vencimento),
-              "Valor da venda": fmt(valorParcela),
-              "Comissão %": fmtPct(pctComissaoPedido(ped)),
-              "Valor da comissão": fmt(com),
-              "Repasse %": fmtPct(Number(ped.repasse_percentual) || 0),
-              "Repasse para": ped.repasse_para || "-",
-              "Valor do repasse": fmt(rep),
-              "Líquido": fmt(com - rep),
-            },
-          });
-        }
-
-        for (const d of (devDet ?? []) as any[]) {
-          const vt = Number(d.valor_total);
-          const pctCom = Number(d.comissao_percentual) || 0;
-          const pctRep = Number(d.repasse_percentual) || 0;
-          const com = pctCom > 0 ? -(vt * (pctCom / 100)) : 0;
-          const rep = pctRep > 0 ? -(vt * (pctRep / 100)) : 0;
-          linhasFin.push({
-            sortKey: `${d.data_devolucao}|${nomeDe(d)}`,
-            row: {
-              "Data do pedido": fmtData(d.pedidos?.data_pedido),
-              "Data de entrega": fmtData(d.pedidos?.data_entrega),
-              "Cliente": nomeDe(d),
-              "Vendedor": d.vendedores?.nome || "-",
-              "Forma de pagamento": `Devolução ${fmtData(d.data_devolucao)}`,
-              "Vencimento do boleto": "-",
-              "Valor da venda": fmt(-vt),
-              "Comissão %": fmtPct(pctCom),
-              "Valor da comissão": fmt(com),
-              "Repasse %": fmtPct(pctRep),
-              "Repasse para": d.pedidos?.repasse_para || "-",
-              "Valor do repasse": fmt(rep),
-              "Líquido": fmt(com - rep),
-            },
-          });
-        }
-
-        setResultado(
-          linhasFin
-            .sort((a, b) => (a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0))
-            .map((x) => x.row)
-        );
+        setResultado([{
+          total_vendido: totalVendidoFinal,
+          comissao_total: comissaoFinal,
+          repasse_total: repasseFinal,
+          devolucoes_abatidas: +devValor.toFixed(2),
+          liquido,
+        }]);
         setTituloResultado("Comissão / Repasse / Líquido do período");
         return;
       }
@@ -336,14 +197,14 @@ export default function RelatoriosPage() {
       if (key === "vendas") {
         let pedidosQuery = supabase
           .from("pedidos")
-          .select("data_pedido, data_entrega, vendedor_id, clientes(nome_fantasia, razao_social), vendedores(nome), pedido_itens(produto_nome, quantidade, unidade, valor_unitario, valor_total)")
+          .select("data_pedido, data_entrega, vendedor_id, clientes(nome_fantasia, razao_social), vendedores(nome), pedido_itens(produto_nome, quantidade, valor_unitario, valor_total)")
           .gte("data_pedido", dataInicio)
           .lte("data_pedido", dataFim);
         if (vendedorFiltro) pedidosQuery = pedidosQuery.eq("vendedor_id", vendedorFiltro);
 
         let devQuery = supabase
           .from("devolucoes")
-          .select("data_devolucao, produto_nome, quantidade, valor_unitario, valor_total, vendedor_id, clientes(nome_fantasia, razao_social), vendedores(nome), pedido_itens(unidade), pedidos!inner(id)")
+          .select("data_devolucao, produto_nome, quantidade, valor_unitario, valor_total, vendedor_id, clientes(nome_fantasia, razao_social), vendedores(nome), pedidos!inner(id)")
           .gte("data_devolucao", dataInicio)
           .lte("data_devolucao", dataFim);
         if (vendedorFiltro) devQuery = devQuery.eq("vendedor_id", vendedorFiltro);
@@ -353,17 +214,12 @@ export default function RelatoriosPage() {
         // Se o banco recusar a consulta, mostra o motivo em vez de "Sem dados".
         if (erroPedidos) {
           setResultado([]);
-          setTotaisVendas(null);
           setTituloResultado(`Erro ao buscar as vendas: ${erroPedidos.message}`);
           return;
         }
         if (erroDev) alert(`Não foi possível carregar as devoluções: ${erroDev.message}`);
 
-        // Quantidade com a unidade do item (KG ou UN). Itens sem unidade = KG.
-        const fmtQtd = (q: number, un: string) => `${fmtNum(q)} ${un}`;
-        let totalKg = 0;
-        let totalUn = 0;
-        let totalValor = 0;
+        const fmtQtd = (q: number) => `${q.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} KG`;
 
         // Uma linha por item de cada pedido (data, entrega, cliente, vendedor,
         // produto, quantidade, valor unitário e valor total).
@@ -371,9 +227,6 @@ export default function RelatoriosPage() {
         for (const p of (pedidosPeriodo ?? []) as any[]) {
           const nomeCliente = p.clientes?.nome_fantasia || p.clientes?.razao_social || "-";
           for (const it of (p.pedido_itens ?? []) as any[]) {
-            const un = it.unidade === "UN" ? "UN" : "KG";
-            if (un === "UN") totalUn += Number(it.quantidade); else totalKg += Number(it.quantidade);
-            totalValor += Number(it.valor_total);
             linhasVendas.push({
               sortKey: `${p.data_pedido}|${nomeCliente}`,
               row: {
@@ -382,7 +235,7 @@ export default function RelatoriosPage() {
                 cliente: nomeCliente,
                 vendedor: p.vendedores?.nome || "-",
                 produto: it.produto_nome || "-",
-                quantidade: fmtQtd(Number(it.quantidade), un),
+                quantidade: fmtQtd(Number(it.quantidade)),
                 valor_unitario: fmt(Number(it.valor_unitario)),
                 valor_total: fmt(Number(it.valor_total)),
               },
@@ -391,10 +244,6 @@ export default function RelatoriosPage() {
         }
         for (const d of (devPeriodo ?? []) as any[]) {
           const nomeCliente = d.clientes?.nome_fantasia || d.clientes?.razao_social || "-";
-          // A devolução segue a unidade do item devolvido (sem vínculo = KG).
-          const un = d.pedido_itens?.unidade === "UN" ? "UN" : "KG";
-          if (un === "UN") totalUn -= Number(d.quantidade); else totalKg -= Number(d.quantidade);
-          totalValor -= Number(d.valor_total);
           linhasVendas.push({
             sortKey: `${d.data_devolucao}|${nomeCliente}`,
             row: {
@@ -403,7 +252,7 @@ export default function RelatoriosPage() {
               cliente: nomeCliente,
               vendedor: d.vendedores?.nome || "-",
               produto: `DEVOLUÇÃO - ${d.produto_nome || "-"}`,
-              quantidade: fmtQtd(-Number(d.quantidade), un),
+              quantidade: fmtQtd(-Number(d.quantidade)),
               valor_unitario: fmt(Number(d.valor_unitario)),
               valor_total: fmt(-Number(d.valor_total)),
             },
@@ -413,11 +262,6 @@ export default function RelatoriosPage() {
           .sort((a, b) => (a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0))
           .map((x) => x.row);
 
-        setTotaisVendas({
-          kg: Math.round(totalKg * 1000) / 1000,
-          un: Math.round(totalUn * 1000) / 1000,
-          valor: Math.round(totalValor * 100) / 100,
-        });
         setResultado(linhas);
         setTituloResultado("Vendas do período");
         return;
@@ -459,7 +303,7 @@ export default function RelatoriosPage() {
   }, [dataInicio, dataFim, vendedorFiltro, cidadeFiltro, segmentoFiltro, clienteDataInicio, clienteDataFim, impressaoFiltro]);
 
   async function backupCompleto() {
-    const tabelas = ["vendedores", "clientes", "vendedor_cliente_status", "agenda", "pedidos", "pedido_itens", "pedido_boletos", "devolucoes", "rascunhos", "metas_mensais", "clientes_impressos"];
+    const tabelas = ["vendedores", "clientes", "vendedor_cliente_status", "agenda", "pedidos", "pedido_itens", "pedido_boletos", "devolucoes", "rascunhos", "metas_mensais"];
     const out: Record<string, any> = {};
     for (const t of tabelas) {
       const { data } = await supabase.from(t).select("*");
@@ -470,96 +314,6 @@ export default function RelatoriosPage() {
     const a = document.createElement("a");
     a.href = url; a.download = `backup-sistema-${new Date().toISOString().slice(0, 10)}.json`; a.click();
     URL.revokeObjectURL(url);
-  }
-
-  // Exporta para Excel (.xlsx) exatamente o que está na tela (já com os filtros
-  // aplicados), com o fechamento no final dos relatórios que têm totais.
-  function exportarExcel() {
-    const linhas = (resultadoNumerado ?? resultado) as any[] | null;
-    if (!linhas || linhas.length === 0) { alert("Sem dados para exportar."); return; }
-    const colunas = Object.keys(linhas[0]);
-    let rodape: any[][] | undefined;
-    if (relatorioAtivo === "vendas" && totaisVendas) {
-      rodape = [
-        ["TOTAL KG", { valor: totaisVendas.kg, formato: "kg" }],
-        ["TOTAL UN", { valor: totaisVendas.un, formato: "num" }],
-        ["VALOR TOTAL", { valor: totaisVendas.valor, formato: "moeda" }],
-      ];
-    } else if (relatorioAtivo === "financeiro" && resumoFinanceiro) {
-      rodape = [
-        ["TOTAL VENDIDO", { valor: resumoFinanceiro.totalVendido, formato: "moeda" }],
-        ["TOTAL COMISSÃO", { valor: resumoFinanceiro.comissaoTotal, formato: "moeda" }],
-        ["TOTAL REPASSE", { valor: resumoFinanceiro.repasseTotal, formato: "moeda" }],
-        ["DEVOLUÇÕES", { valor: resumoFinanceiro.devolucoesAbatidas, formato: "moeda" }],
-        ["TOTAL LÍQUIDO", { valor: resumoFinanceiro.liquido, formato: "moeda" }],
-      ];
-    }
-    baixarXlsx({
-      arquivo: `${tituloResultado}.xlsx`,
-      planilha: tituloResultado,
-      colunas,
-      linhas: linhas.map((r) => colunas.map((c) => r[c])),
-      rodape,
-    });
-  }
-
-  // Restaura os dados de um backup JSON (gerado pelo botão "Backup completo").
-  // Grava os registros do backup (mesmo código = sobrescreve). Não apaga nada
-  // que exista hoje e não esteja no backup.
-  function restaurarBackup() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json,application/json";
-    input.onchange = async () => {
-      const arquivo = input.files?.[0];
-      if (!arquivo) return;
-
-      let dados: any;
-      try {
-        dados = JSON.parse(await arquivo.text());
-      } catch {
-        alert("Não foi possível ler o arquivo. Escolha um backup .json gerado por este sistema.");
-        return;
-      }
-      const tabelas = TABELAS_RESTAURACAO.filter((t) => dados && Array.isArray(dados[t]));
-      if (!dados || typeof dados !== "object" || tabelas.length === 0) {
-        alert("Este arquivo não parece ser um backup do sistema.");
-        return;
-      }
-
-      const resumo = tabelas.map((t) => `${t}: ${dados[t].length} registro(s)`).join("\n");
-      if (!confirm(`Restaurar este backup?\n\n${resumo}\n\nOs registros do backup serão gravados no sistema (registros com o mesmo código são sobrescritos pelos dados do backup). Nada que existe hoje e não está no backup será apagado.`)) return;
-
-      setRestaurando(true);
-      const erros: string[] = [];
-      let total = 0;
-      try {
-        for (const t of tabelas) {
-          const geradas = COLUNAS_GERADAS[t] ?? [];
-          const linhas = (dados[t] as any[]).map((r) => {
-            const c = { ...r };
-            for (const col of geradas) delete c[col];
-            return c;
-          });
-          for (let i = 0; i < linhas.length; i += 500) {
-            const lote = linhas.slice(i, i + 500);
-            const { error } = await supabase.from(t).upsert(lote);
-            if (error) { erros.push(`${t}: ${error.message}`); break; }
-            total += lote.length;
-          }
-        }
-      } finally {
-        setRestaurando(false);
-      }
-
-      if (erros.length) {
-        alert(`Restauração concluída com problemas.\n\nGravados: ${total} registro(s).\n\nErros:\n${erros.join("\n")}`);
-      } else {
-        alert(`Backup restaurado com sucesso: ${total} registro(s) gravado(s).`);
-      }
-      window.location.reload();
-    };
-    input.click();
   }
 
   const isClienteReport = relatorioAtivo ? RELATORIOS_CLIENTE.includes(relatorioAtivo) : false;
@@ -602,34 +356,9 @@ export default function RelatoriosPage() {
       margin: { left: margemLateral, right: margemLateral },
       head: [colunas],
       body: resultadoParaImprimir.map((row: any) => colunas.map((c) => String(row[c] ?? ""))),
-      styles: { fontSize: relatorioAtivo === "financeiro" ? 7 : 8, cellPadding: 1.5, overflow: "linebreak" },
+      styles: { fontSize: 8, cellPadding: 1.5, overflow: "linebreak" },
       headStyles: { fillColor: [124, 58, 237] }, // roxo, mesma cor do sistema
     });
-    // Fechamento no final do PDF (Vendas do período / Comissão-Repasse-Líquido).
-    const fechamento: string[] =
-      relatorioAtivo === "vendas" && totaisVendas
-        ? [
-            `TOTAL KG: ${fmtNum(totaisVendas.kg)} KG`,
-            `TOTAL UNIDADES: ${fmtNum(totaisVendas.un)} UN`,
-            `VALOR TOTAL DO PERÍODO: ${fmt(totaisVendas.valor)}`,
-          ]
-        : relatorioAtivo === "financeiro" && resumoFinanceiro
-        ? [
-            `TOTAL VENDIDO: ${fmt(resumoFinanceiro.totalVendido)}`,
-            `TOTAL COMISSÃO: ${fmt(resumoFinanceiro.comissaoTotal)}`,
-            `TOTAL REPASSE: ${fmt(resumoFinanceiro.repasseTotal)}`,
-            `DEVOLUÇÕES: ${fmt(resumoFinanceiro.devolucoesAbatidas)}`,
-            `TOTAL LÍQUIDO: ${fmt(resumoFinanceiro.liquido)}`,
-          ]
-        : [];
-    if (fechamento.length > 0) {
-      let yTot = ((doc as any).lastAutoTable?.finalY ?? 20) + 8;
-      if (yTot + fechamento.length * 5 + 4 > doc.internal.pageSize.getHeight() - 8) { doc.addPage(); yTot = 15; }
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      fechamento.forEach((linha, i) => doc.text(linha, margemLateral, yTot + i * 5));
-      doc.setFont("helvetica", "normal");
-    }
     doc.save(`${tituloResultado}.pdf`);
   }
 
@@ -730,12 +459,7 @@ export default function RelatoriosPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Relatórios</h1>
-        <div className="flex items-center gap-2">
-          <button className="btn-secondary flex items-center gap-1" onClick={restaurarBackup} disabled={restaurando}>
-            <Download size={16} className="rotate-180" /> {restaurando ? "Restaurando..." : "Restaurar backup (JSON)"}
-          </button>
-          <button className="btn-primary flex items-center gap-1" onClick={backupCompleto}><Download size={16} /> Backup completo (JSON)</button>
-        </div>
+        <button className="btn-primary flex items-center gap-1" onClick={backupCompleto}><Download size={16} /> Backup completo (JSON)</button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -858,9 +582,6 @@ export default function RelatoriosPage() {
               <button className="btn-secondary flex items-center gap-1" onClick={() => downloadCsv(`${tituloResultado}.csv`, resultadoNumerado ?? resultado)}>
                 <Download size={14} /> Exportar CSV
               </button>
-              <button className="btn-secondary flex items-center gap-1" onClick={exportarExcel}>
-                <Download size={14} /> Exportar Excel
-              </button>
               <button className="btn-primary flex items-center gap-1" onClick={baixarPdf}>
                 <Download size={14} /> Baixar PDF
               </button>
@@ -875,22 +596,6 @@ export default function RelatoriosPage() {
                 ))}
               </tbody>
             </table>
-          )}
-          {relatorioAtivo === "financeiro" && resumoFinanceiro && resultado.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-              <div><p className="text-xs text-gray-500 font-semibold">TOTAL VENDIDO</p><p className="font-bold">{fmt(resumoFinanceiro.totalVendido)}</p></div>
-              <div><p className="text-xs text-gray-500 font-semibold">TOTAL COMISSÃO</p><p className="font-bold text-blue-600">{fmt(resumoFinanceiro.comissaoTotal)}</p></div>
-              <div><p className="text-xs text-gray-500 font-semibold">TOTAL REPASSE</p><p className="font-bold text-orange-600">{fmt(resumoFinanceiro.repasseTotal)}</p></div>
-              <div><p className="text-xs text-gray-500 font-semibold">DEVOLUÇÕES</p><p className="font-bold text-red-600">{fmt(resumoFinanceiro.devolucoesAbatidas)}</p></div>
-              <div><p className="text-xs text-gray-500 font-semibold">TOTAL LÍQUIDO</p><p className="font-bold text-violet-600">{fmt(resumoFinanceiro.liquido)}</p></div>
-            </div>
-          )}
-          {relatorioAtivo === "vendas" && totaisVendas && resultado.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-200 text-sm font-semibold space-y-1">
-              <p>TOTAL KG: {fmtNum(totaisVendas.kg)} KG</p>
-              <p>TOTAL UNIDADES: {fmtNum(totaisVendas.un)} UN</p>
-              <p>VALOR TOTAL DO PERÍODO: {fmt(totaisVendas.valor)}</p>
-            </div>
           )}
         </div>
       )}
